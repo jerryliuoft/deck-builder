@@ -235,12 +235,18 @@ function Game({ s, touch, dispatch, tutStep, setTutStep, endTutorial, restart, q
   });
 
   const blocked = modal !== null || over || tutStep === 0;
+  // The tutorial teaches End day at step 5. Ending earlier throws away the Cash the Yard step needs.
+  const endLocked = tutStep !== null && tutStep < 4 && !s.night;
+  const endDay = () => {
+    if (endLocked) return nudge('end', tutStep === 3 ? 'Buy a $3 card from the Yard first.' : 'Not yet. Finish this step of the tutorial first.');
+    dispatch({ type: 'endDay' });
+  };
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setModal(null);
       if (blocked || e.repeat) return;
       if (e.code === 'Space') { e.preventDefault(); dispatch({ type: 'playAll' }); }
-      else if (e.key === 'Enter') { e.preventDefault(); dispatch({ type: 'endDay' }); }
+      else if (e.key === 'Enter') { e.preventDefault(); endDay(); }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -451,7 +457,7 @@ function Game({ s, touch, dispatch, tutStep, setTutStep, endTutorial, restart, q
           <button className="btn playall" disabled={s.hand.length === 0 || tossing} onClick={() => dispatch({ type: 'playAll' })} title="Plays your hand left to right (Space)">
             Play all
           </button>
-          <button className={`btn primary end ${s.hand.length === 0 && !tossing ? 'ready' : ''}`} onClick={() => dispatch({ type: 'endDay' })} title={hint}>
+          <button className={`btn primary end ${endLocked ? 'dim' : s.hand.length === 0 && !tossing ? 'ready' : ''}`} onClick={endDay} title={hint}>
             <span>{cleaning ? 'Done' : willFinish ? 'Finish the deck' : 'End day'}</span>
             {cost && !willFinish && !cleaning && <small className="end-warn">{cost}</small>}
           </button>
